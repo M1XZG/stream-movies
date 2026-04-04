@@ -1,0 +1,21 @@
+# MediaMTX configuration for Stream Movies
+# Documentation: https://github.com/bluenviron/mediamtx
+
+# Reduce log noise (set to "info" or "debug" for troubleshooting)
+logLevel: warn
+logDestinations: [stdout]
+
+# REST API (used for connection stats)
+api: true
+apiAddress: :9997
+
+# RTSP server
+rtsp: true
+rtspAddress: :8554
+
+# Prefer TCP (more reliable over WiFi for VR headsets)
+protocols: [tcp, udp]
+
+# Paths — accept any published stream
+paths:
+  all_others:

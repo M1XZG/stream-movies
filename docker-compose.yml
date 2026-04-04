@@ -1,0 +1,16 @@
+services:
+  stream-movies:
+    container_name: stream-movies
+    build: .
+    ports:
+      - "10090:10090"
+      - "8554:8554"
+      - "9997:9997"
+    volumes:
+      # Replace with your media directory path
+      - /path/to/movies:/media:ro
+    env_file:
+      - .env
+    environment:
+      - MEDIA_DIR=/media
+    restart: unless-stopped

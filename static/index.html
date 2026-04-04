@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Movies</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>Stream Movies</h1>
+        <div id="rtsp-bar">
+            <span class="label">RTSP URL:</span>
+            <code id="rtsp-url">loading...</code>
+            <button id="copy-rtsp" title="Copy to clipboard">Copy</button>
+        </div>
+        <div id="rtsp-ext-bar" class="hidden">
+            <span class="label">External:</span>
+            <code id="rtsp-ext-url"></code>
+            <button id="copy-rtsp-ext" title="Copy to clipboard">Copy</button>
+        </div>
+    </header>
+
+    <main>
+        <section id="browser-panel">
+            <div class="panel-header">
+                <h2>Browse</h2>
+            </div>
+            <div id="search-bar">
+                <input type="text" id="search-input" placeholder="Search movies..." autocomplete="off">
+                <button id="search-clear" class="hidden" title="Clear search">&times;</button>
+            </div>
+            <nav id="breadcrumbs"><a href="#" data-path="">Root</a></nav>
+            <ul id="file-list"></ul>
+        </section>
+
+        <section id="player-panel">
+            <div class="panel-header">
+                <h2>Now Playing</h2>
+            </div>
+            <div id="player-content">
+                <div id="now-playing-file">No file selected</div>
+                <div id="status-badge" class="badge idle">idle</div>
+
+                <div id="progress-section">
+                    <div id="time-display">
+                        <span id="time-current">0:00:00</span>
+                        <span id="time-total">0:00:00</span>
+                    </div>
+                    <input type="range" id="progress-bar" min="0" max="100" step="0.1" value="0">
+                </div>
+
+                <div id="controls">
+                    <button id="btn-back30" title="Back 30s">&#x23EA; 30s</button>
+                    <button id="btn-pause" title="Pause">&#x23F8; Pause</button>
+                    <button id="btn-play" title="Play / Resume">&#x25B6; Play</button>
+                    <button id="btn-fwd30" title="Forward 30s">30s &#x23E9;</button>
+                    <button id="btn-stop" title="Stop">&#x23F9; Stop</button>
+                </div>
+
+                <div id="error-display" class="hidden"></div>
+            </div>
+
+            <!-- Stats Panel -->
+            <div id="stats-panel">
+                <h3 class="stats-heading">Stream Stats</h3>
+                <div id="stats-content">
+                    <div id="stats-grid">
+                        <div class="stats-section">
+                            <h3>Encoding</h3>
+                            <dl id="stats-encoding">
+                                <dt>FPS</dt><dd id="stat-fps">—</dd>
+                                <dt>Bitrate</dt><dd id="stat-bitrate">—</dd>
+                                <dt>Speed</dt><dd id="stat-speed">—</dd>
+                                <dt>Frames</dt><dd id="stat-frames">—</dd>
+                                <dt>Output Size</dt><dd id="stat-outsize">—</dd>
+                            </dl>
+                        </div>
+                        <div class="stats-section">
+                            <h3>Source File</h3>
+                            <dl id="stats-source">
+                                <dt>Container</dt><dd id="stat-container">—</dd>
+                                <dt>Video</dt><dd id="stat-video-codec">—</dd>
+                                <dt>Resolution</dt><dd id="stat-resolution">—</dd>
+                                <dt>Frame Rate</dt><dd id="stat-src-fps">—</dd>
+                                <dt>Audio</dt><dd id="stat-audio-codec">—</dd>
+                                <dt>File Size</dt><dd id="stat-filesize">—</dd>
+                            </dl>
+                        </div>
+                        <div class="stats-section">
+                            <h3>RTSP Server</h3>
+                            <dl id="stats-server">
+                                <dt>Status</dt><dd id="stat-path-status">—</dd>
+                                <dt>MediaMTX</dt><dd id="stat-server-version">—</dd>
+                                <dt>Bytes In</dt><dd id="stat-path-inbound">—</dd>
+                                <dt>Bytes Out</dt><dd id="stat-path-outbound">—</dd>
+                                <dt>Frame Errors</dt><dd id="stat-path-frame-errors">—</dd>
+                                <dt>Tracks</dt><dd id="stat-path-tracks">—</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="connections-panel" class="hidden">
+            <div class="panel-header">
+                <h2>Connections <span id="stat-conn-count">0 viewers</span></h2>
+            </div>
+            <div id="connections-content">
+                <table id="stats-clients">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Transport</th>
+                            <th>Data Sent</th>
+                            <th>RTP Sent</th>
+                            <th>Pkt Loss</th>
+                            <th>Jitter</th>
+                            <th>Connected</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-clients-body"></tbody>
+                </table>
+                <div id="conn-unavailable" class="hidden">MediaMTX API unavailable</div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
