@@ -3,14 +3,11 @@ services:
     container_name: stream-movies
     build: .
     ports:
-      - "10090:10090"
-      - "8554:8554"
-      - "9997:9997"
+      - "${WEB_PORT:-10090}:${WEB_PORT:-10090}"
+      - "${RTSP_PORT:-8554}:${RTSP_PORT:-8554}"
+      - "${MEDIAMTX_API_PORT:-9997}:${MEDIAMTX_API_PORT:-9997}"
     volumes:
-      # Replace with your media directory path
-      - /path/to/movies:/media:ro
+      - ${HOST_MEDIA_DIR}:/media:ro
     env_file:
       - .env
-    environment:
-      - MEDIA_DIR=/media
     restart: unless-stopped
