@@ -78,7 +78,12 @@ async def lifespan(app: FastAPI):
         logger.info(f"Media directory: {media_dir}")
     logger.info(f"Web UI: http://0.0.0.0:{config.web_port}")
     logger.info(f"RTSP stream will be at: rtsp://<this-host>:{config.rtsp_port}/{config.stream_path}")
+    # Give MediaMTX a moment to start before the idle stream connects
+    import asyncio
+    await asyncio.sleep(1)
+    engine.start_idle_stream()
     yield
+    engine.stop_idle_stream()
     engine.stop()
     _stop_mediamtx()
 
@@ -285,6 +290,36 @@ def _get_mediamtx_connections() -> dict:
     except (urllib.error.URLError, json.JSONDecodeError, Exception):
         pass
 
+    # Get HLS muxer info
+    try:
+        req = urllib.request.Request(
+            f"{api_base}/v3/hlsmuxers/list",
+            headers={"Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            data = json.loads(resp.read())
+            items = data.get("items", []) or []
+            for h in items:
+                if h.get("path") == config.stream_path:
+                    hls_reader = {
+                        "id": "hls-muxer",
+                        "ip": "HLS Viewer(s)",
+                        "transport": "HLS",
+                        "state": "read",
+                        "created": h.get("created", ""),
+                        "outbound_bytes": h.get("bytesSent", 0),
+                        "rtp_packets_sent": 0,
+                        "rtp_packets_lost": 0,
+                        "rtp_packets_discarded": 0,
+                        "rtp_packets_jitter": 0,
+                        "rtcp_packets_sent": 0,
+                        "rtcp_packets_received": 0,
+                    }
+                    result["readers"].append(hls_reader)
+                    result["reader_count"] = len(result["readers"])
+    except (urllib.error.URLError, json.JSONDecodeError, Exception):
+        pass
+
     # Get server info
     try:
         req = urllib.request.Request(
@@ -307,9 +342,13 @@ async def api_config(request: Request):
     host = request.headers.get("host", "localhost").split(":")[0]
     resp = {
         "rtsp_url": f"rtsp://{host}:{config.rtsp_port}/{config.stream_path}",
+        "hls_url": f"http://{host}:{config.hls_port}/{config.stream_path}/index.m3u8",
         "web_port": config.web_port,
         "rtsp_port": config.rtsp_port,
+        "hls_port": config.hls_port,
     }
     if config.rtsp_external_url:
         resp["rtsp_external_url"] = config.rtsp_external_url
+    if config.hls_external_url:
+        resp["hls_external_url"] = config.hls_external_url
     return resp

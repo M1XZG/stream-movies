@@ -20,6 +20,6 @@ ENV MEDIA_DIR=/media \
     MEDIAMTX_PATH=/usr/local/bin/mediamtx \
     WEB_PORT=10090
 
-EXPOSE 10090 8554 9997
+EXPOSE 10090 8554 8888 9997
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10090"]

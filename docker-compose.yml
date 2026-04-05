@@ -5,9 +5,11 @@ services:
     ports:
       - "${WEB_PORT:-10090}:${WEB_PORT:-10090}"
       - "${RTSP_PORT:-8554}:${RTSP_PORT:-8554}"
+      - "${HLS_PORT:-8888}:${HLS_PORT:-8888}"
       - "${MEDIAMTX_API_PORT:-9997}:${MEDIAMTX_API_PORT:-9997}"
     volumes:
       - ${HOST_MEDIA_DIR}:/media:ro
+      - ./assets:/app/assets:ro
     env_file:
       - .env
     restart: unless-stopped

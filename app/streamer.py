@@ -45,10 +45,74 @@ class StreamEngine:
         }
         # Source file info (populated on play)
         self.source_info = None
+        # Idle stream process (persistent carrier signal)
+        self._idle_process = None
 
     @property
     def rtsp_publish_url(self):
         return f"rtsp://{self.config.rtsp_publish_host}:{self.config.rtsp_port}/{self.config.stream_path}"
+
+    # ── Idle stream management ─────────────────────
+
+    def start_idle_stream(self):
+        """Start a persistent idle stream (static image + silence) to keep RTSP alive."""
+        if not self.config.idle_enabled:
+            return
+        image = Path(self.config.idle_image)
+        if not image.exists():
+            logger.warning(f"Idle image not found: {image} — idle stream disabled")
+            return
+        with self._lock:
+            self._stop_idle_internal()
+            cmd = [
+                self.config.ffmpeg_path, "-y",
+                "-loop", "1", "-re", "-i", str(image),
+                "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+                "-c:v", "libx264", "-profile:v", "baseline", "-level", "4.0",
+                "-preset", "ultrafast", "-tune", "stillimage",
+                "-b:v", "1500k", "-maxrate", "2000k", "-bufsize", "2000k",
+                "-bf", "0", "-g", "60", "-keyint_min", "60",
+                "-x264-params", "sliced-threads=0:aud=1:repeat-headers=1",
+                "-vf", f"scale={self.config.max_width}:{self.config.max_height}"
+                       f":force_original_aspect_ratio=decrease,"
+                       f"pad={self.config.max_width}:{self.config.max_height}:(ow-iw)/2:(oh-ih)/2",
+                "-pix_fmt", "yuv420p",
+                "-c:a", "aac", "-b:a", "32k", "-ac", "2",
+                "-f", "rtsp", "-rtsp_transport", "tcp",
+                self.rtsp_publish_url,
+            ]
+            logger.info("Starting idle stream")
+            try:
+                self._idle_process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setsid,
+                )
+            except Exception as e:
+                logger.error(f"Failed to start idle stream: {e}")
+
+    def stop_idle_stream(self):
+        """Stop the idle stream (called on shutdown)."""
+        with self._lock:
+            self._stop_idle_internal()
+
+    def _stop_idle_internal(self):
+        """Kill the idle process. Must be called with self._lock held."""
+        if self._idle_process:
+            proc = self._idle_process
+            self._idle_process = None
+            try:
+                if proc.poll() is None:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                    proc.wait(timeout=3)
+            except (ProcessLookupError, OSError, subprocess.TimeoutExpired):
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                except (ProcessLookupError, OSError):
+                    pass
+
+    # ── Playback ───────────────────────────────────
 
     def play(self, rel_path: str, offset: float = 0.0) -> dict:
         base = Path(self.config.media_dir).resolve()
@@ -65,6 +129,7 @@ class StreamEngine:
 
         with self._lock:
             self._stop_internal()
+            self._stop_idle_internal()
 
             self.current_file = str(full_path)
             self.current_file_rel = rel_path
@@ -252,6 +317,10 @@ class StreamEngine:
         self.playback_start_time = None
         self.pause_start_time = None
         self.total_pause_duration = 0.0
+
+        # Restart idle stream after stopping playback
+        if self.config.idle_enabled:
+            threading.Thread(target=self.start_idle_stream, daemon=True).start()
 
     def _build_ffmpeg_cmd(self, file_path: Path, offset: float) -> list:
         cmd = [self.config.ffmpeg_path, "-y"]
@@ -445,4 +514,7 @@ class StreamEngine:
                     logger.error(f"FFmpeg error (code {proc.returncode}): {self.error_message}")
                 else:
                     self.state = PlaybackState.IDLE
+                    # Restart idle stream after movie ends naturally
+                    if self.config.idle_enabled:
+                        threading.Thread(target=self.start_idle_stream, daemon=True).start()
                 self.process = None

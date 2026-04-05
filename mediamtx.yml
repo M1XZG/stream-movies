@@ -13,6 +13,10 @@ apiAddress: :9997
 rtsp: true
 rtspAddress: :8554
 
+# HLS server (for Quest/Android compatibility)
+hls: true
+hlsAddress: :8888
+
 # Prefer TCP (more reliable over WiFi for VR headsets)
 protocols: [tcp, udp]
 

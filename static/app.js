@@ -354,6 +354,28 @@ function copyExtUrl() {
 $copyRtspExt.addEventListener("click", copyExtUrl);
 $rtspExtUrl.addEventListener("click", copyExtUrl);
 
+// Copy HLS URL
+const $hlsUrl = document.getElementById("hls-url");
+const $copyHls = document.getElementById("copy-hls");
+
+function copyHlsUrl() {
+    copyToClipboard($hlsUrl.textContent, $copyHls);
+}
+
+$copyHls.addEventListener("click", copyHlsUrl);
+$hlsUrl.addEventListener("click", copyHlsUrl);
+
+// Copy external HLS URL
+const $copyHlsExt = document.getElementById("copy-hls-ext");
+const $hlsExtUrl = document.getElementById("hls-ext-url");
+
+function copyHlsExtUrl() {
+    copyToClipboard($hlsExtUrl.textContent, $copyHlsExt);
+}
+
+$copyHlsExt.addEventListener("click", copyHlsExtUrl);
+$hlsExtUrl.addEventListener("click", copyHlsExtUrl);
+
 
 /* ── Utilities ─────────────────────────────────── */
 function formatTime(seconds) {
@@ -518,8 +540,16 @@ function renderStats(data) {
             $rtspExtUrl.textContent = cfg.rtsp_external_url;
             document.getElementById("rtsp-ext-bar").classList.remove("hidden");
         }
+        if (cfg.hls_url) {
+            $hlsUrl.textContent = cfg.hls_url;
+        }
+        if (cfg.hls_external_url) {
+            $hlsExtUrl.textContent = cfg.hls_external_url;
+            document.getElementById("hls-ext-bar").classList.remove("hidden");
+        }
     } catch {
         $rtspUrl.textContent = "rtsp://<host>:8554/stream";
+        $hlsUrl.textContent = "http://<host>:8888/stream/index.m3u8";
     }
 
     // Load file browser

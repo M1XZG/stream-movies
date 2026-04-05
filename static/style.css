@@ -47,7 +47,9 @@ header h1 {
 }
 
 #rtsp-bar,
-#rtsp-ext-bar {
+#rtsp-ext-bar,
+#hls-bar,
+#hls-ext-bar {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -55,12 +57,16 @@ header h1 {
 }
 
 #rtsp-bar .label,
-#rtsp-ext-bar .label {
+#rtsp-ext-bar .label,
+#hls-bar .label,
+#hls-ext-bar .label {
     color: var(--text-secondary);
 }
 
 #rtsp-bar code,
-#rtsp-ext-bar code {
+#rtsp-ext-bar code,
+#hls-bar code,
+#hls-ext-bar code {
     background: var(--bg-tertiary);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
@@ -70,7 +76,9 @@ header h1 {
 }
 
 #copy-rtsp,
-#copy-rtsp-ext {
+#copy-rtsp-ext,
+#copy-hls,
+#copy-hls-ext {
     background: var(--bg-tertiary);
     color: var(--text-primary);
     border: 1px solid var(--border);
@@ -81,7 +89,9 @@ header h1 {
 }
 
 #copy-rtsp:hover,
-#copy-rtsp-ext:hover {
+#copy-rtsp-ext:hover,
+#copy-hls:hover,
+#copy-hls-ext:hover {
     background: var(--accent);
     color: #fff;
 }
