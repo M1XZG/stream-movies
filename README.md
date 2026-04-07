@@ -1,3 +1,5 @@
+# WORKING - but WIP
+
 # Stream Movies
 
 RTSP streaming server with a web UI for browsing and playing movie files. Designed for VR headsets (VRChat, Meta Quest, PCVR) but works with any RTSP client.
