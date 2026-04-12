@@ -381,6 +381,63 @@ section {
     border-color: var(--danger);
 }
 
+#btn-preview {
+    border-color: var(--accent) !important;
+}
+
+#btn-preview:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+/* ── Video Preview ─────────────────────────────── */
+#video-preview {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+}
+
+#video-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    background: var(--bg-tertiary);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+#btn-close-preview {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 0.3rem;
+    line-height: 1;
+}
+
+#btn-close-preview:hover {
+    color: var(--danger);
+}
+
+#preview-player {
+    width: 100%;
+    display: block;
+    max-height: 400px;
+    background: #000;
+    object-fit: contain;
+}
+
+#video-status {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+}
+
 /* ── Error Display ─────────────────────────────── */
 #error-display {
     background: #4a1318;

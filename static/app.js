@@ -70,6 +70,11 @@ const $searchInput   = document.getElementById("search-input");
 const $searchClear   = document.getElementById("search-clear");
 const $connPanel     = document.getElementById("connections-panel");
 const $connUnavail   = document.getElementById("conn-unavailable");
+const $videoPreview  = document.getElementById("video-preview");
+const $previewPlayer = document.getElementById("preview-player");
+const $videoStatus   = document.getElementById("video-status");
+let hlsInstance = null;
+let hlsBaseUrl = "";
 
 
 /* ── File browser ──────────────────────────────── */
@@ -303,6 +308,74 @@ document.getElementById("btn-fwd30").addEventListener("click", async () => {
     pollStatus();
 });
 
+// Preview toggle
+document.getElementById("btn-preview").addEventListener("click", () => {
+    if ($videoPreview.classList.contains("hidden")) {
+        openPreview();
+    } else {
+        closePreview();
+    }
+});
+
+document.getElementById("btn-close-preview").addEventListener("click", () => {
+    closePreview();
+});
+
+function openPreview() {
+    $videoPreview.classList.remove("hidden");
+    $previewPlayer.volume = 0.1;
+    const hlsUrl = hlsBaseUrl + "/stream/index.m3u8";
+    $videoStatus.textContent = "Connecting to HLS stream...";
+
+    if (typeof Hls !== "undefined" && Hls.isSupported()) {
+        if (hlsInstance) {
+            hlsInstance.destroy();
+        }
+        hlsInstance = new Hls({
+            liveSyncDurationCount: 3,
+            liveMaxLatencyDurationCount: 6,
+            enableWorker: true,
+        });
+        hlsInstance.loadSource(hlsUrl);
+        hlsInstance.attachMedia($previewPlayer);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+            $previewPlayer.play().catch(() => {});
+            $videoStatus.textContent = "Connected to HLS stream";
+        });
+        hlsInstance.on(Hls.Events.ERROR, (event, data) => {
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                $videoStatus.textContent = "Waiting for stream... (start a movie first)";
+                setTimeout(() => {
+                    if (hlsInstance) hlsInstance.loadSource(hlsUrl);
+                }, 3000);
+            } else if (data.fatal) {
+                $videoStatus.textContent = "Playback error: " + data.details;
+            }
+        });
+    } else if ($previewPlayer.canPlayType("application/vnd.apple.mpegurl")) {
+        // Safari native HLS
+        $previewPlayer.src = hlsUrl;
+        $previewPlayer.addEventListener("loadedmetadata", () => {
+            $previewPlayer.play().catch(() => {});
+            $videoStatus.textContent = "Connected to HLS stream (native)";
+        });
+    } else {
+        $videoStatus.textContent = "HLS not supported in this browser";
+    }
+}
+
+function closePreview() {
+    $videoPreview.classList.add("hidden");
+    if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+    }
+    $previewPlayer.pause();
+    $previewPlayer.removeAttribute("src");
+    $previewPlayer.load();
+    $videoStatus.textContent = "Click Preview while a movie is streaming";
+}
+
 // Progress bar seeking
 $progressBar.addEventListener("mousedown", () => { isSeeking = true; });
 $progressBar.addEventListener("touchstart", () => { isSeeking = true; });
@@ -508,19 +581,29 @@ function renderStats(data) {
     if (conn.readers && conn.readers.length > 0) {
         for (const r of conn.readers) {
             const tr = document.createElement("tr");
-            const lossRate = (r.rtp_packets_sent > 0 && r.rtp_packets_lost > 0)
-                ? ` (${(r.rtp_packets_lost / r.rtp_packets_sent * 100).toFixed(2)}%)`
-                : "";
-            const jitter = r.rtp_packets_jitter ? r.rtp_packets_jitter.toFixed(3) + " ms" : "—";
             const connected = r.created ? formatElapsed(r.created) : "—";
+
+            // Calculate per-client bitrate from bytes sent / time connected
+            let bitrateStr = "—";
+            if (r.outbound_bytes && r.created) {
+                try {
+                    const start = new Date(r.created);
+                    const elapsedSecs = (Date.now() - start.getTime()) / 1000;
+                    if (elapsedSecs > 1) {
+                        const bitsPerSec = (r.outbound_bytes * 8) / elapsedSecs;
+                        if (bitsPerSec >= 1e6) bitrateStr = (bitsPerSec / 1e6).toFixed(1) + " Mbps";
+                        else if (bitsPerSec >= 1e3) bitrateStr = (bitsPerSec / 1e3).toFixed(0) + " kbps";
+                        else bitrateStr = Math.round(bitsPerSec) + " bps";
+                    }
+                } catch { /* ignore */ }
+            }
 
             tr.innerHTML =
                 `<td>${esc(r.ip || r.id || "—")}</td>` +
                 `<td>${esc(r.transport || "—")}</td>` +
+                `<td>${bitrateStr}</td>` +
                 `<td>${r.outbound_bytes ? formatSize(r.outbound_bytes) : "—"}</td>` +
-                `<td>${r.rtp_packets_sent ? r.rtp_packets_sent.toLocaleString() : "—"}</td>` +
-                `<td class="${r.rtp_packets_lost > 0 ? "stat-warn" : ""}">${r.rtp_packets_lost ? r.rtp_packets_lost.toLocaleString() + lossRate : "0"}</td>` +
-                `<td>${jitter}</td>` +
+
                 `<td>${connected}</td>`;
             tbody.appendChild(tr);
         }
@@ -542,6 +625,13 @@ function renderStats(data) {
         }
         if (cfg.hls_url) {
             $hlsUrl.textContent = cfg.hls_url;
+            // Extract base URL for the video player (e.g. http://host:8888)
+            try {
+                const u = new URL(cfg.hls_url);
+                hlsBaseUrl = u.origin;
+            } catch {
+                hlsBaseUrl = `http://${location.hostname}:8888`;
+            }
         }
         if (cfg.hls_external_url) {
             $hlsExtUrl.textContent = cfg.hls_external_url;

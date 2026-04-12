@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stream Movies</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 </head>
 <body>
     <header>
@@ -66,6 +67,16 @@
                     <button id="btn-play" title="Play / Resume">&#x25B6; Play</button>
                     <button id="btn-fwd30" title="Forward 30s">30s &#x23E9;</button>
                     <button id="btn-stop" title="Stop">&#x23F9; Stop</button>
+                    <button id="btn-preview" title="Watch in browser">&#x1F4FA; Preview</button>
+                </div>
+
+                <div id="video-preview" class="hidden">
+                    <div id="video-toolbar">
+                        <span>Browser Preview</span>
+                        <button id="btn-close-preview" title="Close preview">&times;</button>
+                    </div>
+                    <video id="preview-player" controls playsinline></video>
+                    <div id="video-status">Click Preview while a movie is streaming</div>
                 </div>
 
                 <div id="error-display" class="hidden"></div>
@@ -123,10 +134,8 @@
                         <tr>
                             <th>IP Address</th>
                             <th>Transport</th>
+                            <th>Bitrate</th>
                             <th>Data Sent</th>
-                            <th>RTP Sent</th>
-                            <th>Pkt Loss</th>
-                            <th>Jitter</th>
                             <th>Connected</th>
                         </tr>
                     </thead>
